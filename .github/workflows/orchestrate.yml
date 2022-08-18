@@ -63,4 +63,4 @@ jobs:
         workflow: Check upstream for new release
         token: ${{ secrets.REPO_ACCESS_TOKEN }}
         wait-for-completion: true
-        wait-for-completion-interval: 2m
+        wait-for-completion-interval: 30s
