@@ -7,7 +7,30 @@ async function getOwnRepositories(github: Github): Promise<string[]> {
 		org: "esm2cjs",
 		type: "forks",
 	});
-	return repos.map((repo) => repo.name);
+
+	const ret: string[] = [];
+
+	for (const repo of repos) {
+		// Check if package.json is already using our scope (or if this is a WIP)
+		const { data: contents } = await github.rest.repos.getContent({
+			owner: "esm2cjs",
+			repo: repo.name,
+			path: "package.json",
+		});
+		if (
+			isObject(contents) &&
+			contents.type === "file" &&
+			"content" in contents
+		) {
+			const packageJson = JSON.parse(
+				Buffer.from(contents.content, "base64").toString()
+			);
+			if (!packageJson.name.includes("@esm2cjs/")) continue;
+		}
+		ret.push(repo.name);
+	}
+
+	return ret;
 }
 
 async function getOwnDependencies(
@@ -20,7 +43,11 @@ async function getOwnDependencies(
 		repo,
 		path: "package.json",
 	});
-	if (isObject(contents) && contents.type === "file" && "content" in contents) {
+	if (
+		isObject(contents) &&
+		contents.type === "file" &&
+		"content" in contents
+	) {
 		const packageJson = JSON.parse(
 			Buffer.from(contents.content, "base64").toString()
 		);
@@ -57,7 +84,10 @@ async function getOwnDependencies(
 }
 
 // Builds a graph of "own" dependencies and sorts it topologically, to determine the order in which to check the repositories.
-export async function determineCheckOrder(param: {github: Github, context: Context}) {
+export async function determineCheckOrder(param: {
+	github: Github;
+	context: Context;
+}) {
 	const { github, context } = param;
 
 	const ownRepos = await getOwnRepositories(github);
