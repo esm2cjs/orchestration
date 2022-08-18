@@ -1,0 +1,66 @@
+name: Orchestrate org builds
+on:
+  schedule:
+    # check each night at 1 AM
+    - cron: '00 01 * * *'
+  workflow_dispatch: {}
+
+jobs:
+  build-graph:
+    name: Determine build graph
+    runs-on: ubuntu-latest
+
+    outputs:
+      MATRIX: ${{ steps.matrix.outputs.result }}
+
+    strategy:
+      matrix:
+        node-version: [16.x] # This should be LTS
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v3
+
+    - name: Use Node.js ${{ matrix.node-version }}
+      uses: actions/setup-node@v3
+      with:
+        node-version: ${{ matrix.node-version }}
+        cache: 'npm'
+
+    - name: Install dependencies
+      run: npm ci
+
+    - name: Build
+      run: npm run build
+
+    - name: Sort dependencies
+      id: matrix
+      uses: actions/github-script@v6
+      with:
+        github-token: ${{secrets.GITHUB_TOKEN}}
+        script: |
+          const scripts = require(`${process.env.GITHUB_WORKSPACE}/.github/scripts/index.js`);
+          return scripts.determineCheckOrder({github, context});
+
+  trigger-builds:
+    name: Build ${{ matrix.repo }}
+    needs: [build-graph]
+
+    runs-on: ubuntu-latest
+
+    strategy:
+      matrix:
+        repo: ${{ fromJson(needs.build-graph.outputs.MATRIX) }}
+      # We want to build all packages sequentially
+      fail-fast: true
+      max-parallel: 1
+    
+    steps:
+    - name: Trigger build and wait
+      uses: aurelien-baudet/workflow-dispatch@v2
+      with:
+        repo: "esm2cjs/${{ matrix.repo }}"
+        workflow: Check upstream for new release
+        token: ${{ secrets.REPO_ACCESS_TOKEN }}
+        wait-for-completion: true
+        wait-for-completion-interval: 2m
