@@ -53,7 +53,7 @@ async function getOwnDependencies(github, repo, ownRepos) {
             for (const [dep, version] of Object.entries(packageJson.dependencies)) {
                 if (isOwn(dep, version)) {
                     github.log.info(`dependency ${dep}@${version} is ours, adding to list`);
-                    ret.push(dep);
+                    ret.push(dep.replace(/^@esm2cjs\//, ""));
                 }
                 else {
                     github.log.info(`dependency ${dep}@${version} is not ours`);
@@ -64,7 +64,7 @@ async function getOwnDependencies(github, repo, ownRepos) {
             for (const [dep, version] of Object.entries(packageJson.devDependencies)) {
                 if (isOwn(dep, version)) {
                     github.log.info(`devDependency ${dep}@${version} is ours, adding to list`);
-                    ret.push(dep);
+                    ret.push(dep.replace(/^@esm2cjs\//, ""));
                 }
                 else {
                     github.log.info(`devDependency ${dep}@${version} is not ours`);

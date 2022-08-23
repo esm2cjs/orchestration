@@ -75,7 +75,7 @@ async function getOwnDependencies(
 					github.log.info(
 						`dependency ${dep}@${version} is ours, adding to list`
 					);
-					ret.push(dep);
+					ret.push(dep.replace(/^@esm2cjs\//, ""));
 				} else {
 					github.log.info(`dependency ${dep}@${version} is not ours`);
 				}
@@ -89,9 +89,11 @@ async function getOwnDependencies(
 					github.log.info(
 						`devDependency ${dep}@${version} is ours, adding to list`
 					);
-					ret.push(dep);
+					ret.push(dep.replace(/^@esm2cjs\//, ""));
 				} else {
-					github.log.info(`devDependency ${dep}@${version} is not ours`);
+					github.log.info(
+						`devDependency ${dep}@${version} is not ours`
+					);
 				}
 			}
 		}
