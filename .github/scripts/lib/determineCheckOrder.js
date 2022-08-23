@@ -1,6 +1,6 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.determineCheckOrder = void 0;
+exports.getDefaultBranch = exports.determineCheckOrder = void 0;
 const graph_1 = require("./graph");
 const typeguards_1 = require("./typeguards");
 async function getOwnRepositories(github) {
@@ -8,7 +8,24 @@ async function getOwnRepositories(github) {
         org: "esm2cjs",
         type: "forks",
     });
-    return repos.map((repo) => repo.name);
+    const ret = [];
+    for (const repo of repos) {
+        // Check if package.json is already using our scope (or if this is a WIP)
+        const { data: contents } = await github.rest.repos.getContent({
+            owner: "esm2cjs",
+            repo: repo.name,
+            path: "package.json",
+        });
+        if ((0, typeguards_1.isObject)(contents) &&
+            contents.type === "file" &&
+            "content" in contents) {
+            const packageJson = JSON.parse(Buffer.from(contents.content, "base64").toString());
+            if (!packageJson.name.includes("@esm2cjs/"))
+                continue;
+        }
+        ret.push(repo.name);
+    }
+    return ret;
 }
 async function getOwnDependencies(github, repo, ownRepos) {
     const { data: contents } = await github.rest.repos.getContent({
@@ -16,7 +33,9 @@ async function getOwnDependencies(github, repo, ownRepos) {
         repo,
         path: "package.json",
     });
-    if ((0, typeguards_1.isObject)(contents) && contents.type === "file" && "content" in contents) {
+    if ((0, typeguards_1.isObject)(contents) &&
+        contents.type === "file" &&
+        "content" in contents) {
         const packageJson = JSON.parse(Buffer.from(contents.content, "base64").toString());
         const ret = [];
         if ((0, typeguards_1.isObject)(packageJson.dependencies)) {
@@ -60,3 +79,12 @@ async function determineCheckOrder(param) {
     return checkOrder;
 }
 exports.determineCheckOrder = determineCheckOrder;
+async function getDefaultBranch(param, repo) {
+    const { github, context } = param;
+    const { data: repoInfo } = await github.rest.repos.get({
+        owner: "esm2cjs",
+        repo,
+    });
+    return repoInfo.default_branch;
+}
+exports.getDefaultBranch = getDefaultBranch;

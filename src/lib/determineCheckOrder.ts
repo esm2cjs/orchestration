@@ -108,3 +108,19 @@ export async function determineCheckOrder(param: {
 	const checkOrder = topologicalSort(graph);
 	return checkOrder;
 }
+
+export async function getDefaultBranch(
+	param: {
+		github: Github;
+		context: Context;
+	},
+	repo: string
+): Promise<string> {
+	const { github, context } = param;
+
+	const { data: repoInfo } = await github.rest.repos.get({
+		owner: "esm2cjs",
+		repo,
+	});
+	return repoInfo.default_branch;
+}
