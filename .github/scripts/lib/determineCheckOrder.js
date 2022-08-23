@@ -33,6 +33,17 @@ async function getOwnDependencies(github, repo, ownRepos) {
         repo,
         path: "package.json",
     });
+    function isOwn(dep, version) {
+        // variant 1: `"foo": "npm:@esm2cjs/foo@^1.0.0"`
+        if (ownRepos.includes(dep) && version.includes(`@esm2cjs/${dep}`)) {
+            return true;
+        }
+        // variant 2: `"@esm2cjs/foo": "^1.0.0"`
+        if (ownRepos.some((r) => `@esm2cjs/${r}` === dep)) {
+            return true;
+        }
+        return false;
+    }
     if ((0, typeguards_1.isObject)(contents) &&
         contents.type === "file" &&
         "content" in contents) {
@@ -40,17 +51,23 @@ async function getOwnDependencies(github, repo, ownRepos) {
         const ret = [];
         if ((0, typeguards_1.isObject)(packageJson.dependencies)) {
             for (const [dep, version] of Object.entries(packageJson.dependencies)) {
-                if (ownRepos.includes(dep) &&
-                    version.includes(`@esm2cjs/${dep}`)) {
+                if (isOwn(dep, version)) {
+                    github.log.info(`dependency ${dep}@${version} is ours, adding to list`);
                     ret.push(dep);
+                }
+                else {
+                    github.log.info(`dependency ${dep}@${version} is not ours`);
                 }
             }
         }
         if ((0, typeguards_1.isObject)(packageJson.devDependencies)) {
             for (const [dep, version] of Object.entries(packageJson.devDependencies)) {
-                if (ownRepos.includes(dep) &&
-                    version.includes(`@esm2cjs/${dep}`)) {
+                if (isOwn(dep, version)) {
+                    github.log.info(`devDependency ${dep}@${version} is ours, adding to list`);
                     ret.push(dep);
+                }
+                else {
+                    github.log.info(`devDependency ${dep}@${version} is not ours`);
                 }
             }
         }
