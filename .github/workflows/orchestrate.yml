@@ -82,3 +82,4 @@ jobs:
         token: ${{ secrets.REPO_ACCESS_TOKEN }}
         wait-for-completion: true
         wait-for-completion-interval: 30s
+        display-workflow-run-url: false
