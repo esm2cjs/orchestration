@@ -44,41 +44,41 @@ jobs:
           console.dir(ret);
           return ret;
 
-  # trigger-builds:
-  #   name: Build ${{ matrix.repo }}
-  #   needs: [build-graph]
+  trigger-builds:
+    name: Build ${{ matrix.repo }}
+    needs: [build-graph]
 
-  #   runs-on: ubuntu-latest
+    runs-on: ubuntu-latest
 
-  #   strategy:
-  #     matrix:
-  #       repo: ${{ fromJson(needs.build-graph.outputs.MATRIX) }}
-  #     # We want to build all packages sequentially
-  #     fail-fast: true
-  #     max-parallel: 1
+    strategy:
+      matrix:
+        repo: ${{ fromJson(needs.build-graph.outputs.MATRIX) }}
+      # We want to build all packages sequentially
+      fail-fast: true
+      max-parallel: 1
     
-  #   steps:
-  #   - name: Checkout code
-  #     uses: actions/checkout@v3
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v3
 
-  #   - name: Get default branch
-  #     id: default-branch
-  #     uses: actions/github-script@v6
-  #     env:
-  #       REPO: ${{ matrix.repo }}
-  #     with:
-  #       github-token: ${{secrets.GITHUB_TOKEN}}
-  #       result-encoding: string
-  #       script: |
-  #         const scripts = require(`${process.env.GITHUB_WORKSPACE}/.github/scripts/index.js`);
-  #         return scripts.getDefaultBranch({github, context}, process.env.REPO);
+    - name: Get default branch
+      id: default-branch
+      uses: actions/github-script@v6
+      env:
+        REPO: ${{ matrix.repo }}
+      with:
+        github-token: ${{secrets.GITHUB_TOKEN}}
+        result-encoding: string
+        script: |
+          const scripts = require(`${process.env.GITHUB_WORKSPACE}/.github/scripts/index.js`);
+          return scripts.getDefaultBranch({github, context}, process.env.REPO);
 
-  #   - name: Trigger build and wait
-  #     uses: aurelien-baudet/workflow-dispatch@v2
-  #     with:
-  #       repo: "esm2cjs/${{ matrix.repo }}"
-  #       ref: ${{ steps.default-branch.outputs.result }}
-  #       workflow: Check upstream for new release
-  #       token: ${{ secrets.REPO_ACCESS_TOKEN }}
-  #       wait-for-completion: true
-  #       wait-for-completion-interval: 30s
+    - name: Trigger build and wait
+      uses: aurelien-baudet/workflow-dispatch@v2
+      with:
+        repo: "esm2cjs/${{ matrix.repo }}"
+        ref: ${{ steps.default-branch.outputs.result }}
+        workflow: Check upstream for new release
+        token: ${{ secrets.REPO_ACCESS_TOKEN }}
+        wait-for-completion: true
+        wait-for-completion-interval: 30s
