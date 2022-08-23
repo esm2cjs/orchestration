@@ -40,7 +40,7 @@ jobs:
         github-token: ${{secrets.GITHUB_TOKEN}}
         script: |
           const scripts = require(`${process.env.GITHUB_WORKSPACE}/.github/scripts/index.js`);
-          const ret = scripts.determineCheckOrder({github, context});
+          const ret = await scripts.determineCheckOrder({github, context});
           console.dir(ret);
           return ret;
 
