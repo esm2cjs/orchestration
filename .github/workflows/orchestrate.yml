@@ -54,9 +54,10 @@ jobs:
       matrix:
         repo: ${{ fromJson(needs.build-graph.outputs.MATRIX) }}
       # We want to build all packages sequentially
-      fail-fast: true
       max-parallel: 1
-    
+      # DO NOT fail fast, or any not-yet-supported upstream update will prevent all other packages from being updated
+      # fail-fast: true
+
     steps:
     - name: Checkout code
       uses: actions/checkout@v3
